@@ -12,7 +12,7 @@ Main features:
 
 ## Table of Contents
 
-1. [Basic Condguration](#1-basic-configuration "Goto 1. Basic Condguration")
+1. [Basic Configuration](#1-basic-configuration "Goto 1. Basic Condguration")
 2. [NordVPN](#2-nordvpn "Goto 2. NordVPN")
 3. [OpenMediaVault](#3-openmediavault "Goto 3. OpenMediaVault") 
 4. [Docker and Portainer](#4-Docker-and-Portainer "Goto 4. Docker and Portainer")
