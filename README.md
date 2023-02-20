@@ -157,7 +157,7 @@ Via omv-extras in OMV:
 &nbsp;
 ## 5. Transmission
 
-[Transmission](https://transmissionbt.com) is the BitTorrent client that will be used by Sonarr and Prowlarr. 
+[Transmission](https://transmissionbt.com) is the BitTorrent client that will be used by Sonarr and Radarr.
 
 1. Create the following directories:
   - /home/dietpi/Docker/Transmission
