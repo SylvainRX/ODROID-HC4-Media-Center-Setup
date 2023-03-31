@@ -293,7 +293,7 @@ You can apply quality or language profiles to your TV Show in order for Sonarr t
 
 [Radarr](https://radarr.video) is a movie collection manager. It will allow you to download movies via BitTorrent using torrent files from indexers provided by Prowlarr.  
 
-### 8.1. Install via Portainer
+### 8.1. Install
 
 1. Create the following directories: 
   - /home/dietpi/Docker/Radarr
@@ -356,6 +356,8 @@ Contratily to Sonarr, Radarr has only one type of profile which contains both th
 
 [Jellyfin](https://jellyfin.org) is the media server that you will use to access your movies and tv shows. 
 
+### 9.1. Install
+
 1. Create the following directory: /home/dietpi/Docker/Jellyfin
 2. Deploy Jellyfin by executing:
 ```
@@ -378,6 +380,12 @@ docker run --detach \
 
 3. Go to: `http://<HC4-IP>:8096` and setup your account.
 
+### 9.2. Transcoding
+1. Go to the playback section of the administration dashboard.
+2, Under Hardware Acceleration, select "Video Acceleration API (VAAPI)".
+3. Enable hardware encoding for all types.
+4. Set transcoding thread count to max.
+5. Set encoding preset to slow. Adjust it if needed.
 
 
 &nbsp;
