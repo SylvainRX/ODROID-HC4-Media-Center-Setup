@@ -1,44 +1,82 @@
 # ODROID-HC4 Media Center Setup
 
+[![Stars](https://img.shields.io/github/stars/SylvainRX/ODROID-HC4-Media-Center-Setup?style=flat&color=yellow&label=Stars)](https://github.com/SylvainRX/ODROID-HC4-Media-Center-Setup/stargazers)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Platform: ODROID-HC4](https://img.shields.io/badge/Platform-ODROID--HC4-brightgreen)](https://www.hardkernel.com/shop/odroid-hc4/)
+[![OS: DietPi](https://img.shields.io/badge/OS-DietPi-orange)](https://dietpi.com)
+[![Docker](https://img.shields.io/badge/Docker-Supported-blue?logo=docker)](https://www.docker.com/)
+[![Automation: Available](https://img.shields.io/badge/Automation-Available-success)](scripts/README.md)
+
 This page will guide you through the setup of a media center on an [ODROID-HC4](https://www.hardkernel.com/shop/odroid-hc4/). The end goal is to have a platform where you can watch, download, and store content in a user friendly manner.
 
 Main features:
 - Media server: [Jellyfin](https://jellyfin.org).
-- TV show collection manager and downloader: [Sonarr](https://sonarr.tv). 
+- TV show collection manager and downloader: [Sonarr](https://sonarr.tv).
 - Movie collection manager and downloader: [Radarr](https://radarr.video).
 - NAS: [OpenMediaVault](https://www.openmediavault.org).
 
+---
 
+## 🚀 NEW: Automated Setup Available!
+
+**Save 2-3 hours of setup time** with our automated installation scripts!
+
+👉 **See [scripts/README.md](scripts/README.md) for complete automation guide**
+
+The automated scripts handle:
+- ✅ Fan control configuration  
+- ✅ OpenMediaVault installation  
+- ✅ NordVPN installation and setup (optional - can be skipped)  
+- ✅ Docker and Docker Compose installation  
+- ✅ Docker container deployment (Transmission, Prowlarr, Sonarr, Radarr, Jellyfin)  
+- ✅ Service wiring via REST APIs (Prowlarr ↔ Sonarr/Radarr, Transmission setup, hardlinks enabled)  
+- ✅ Resume after interruptions with state tracking
+
+**Quick start:**
+```bash
+cd scripts
+nano config.sh              # Fill in your timezone, NordVPN token (optional), etc.
+sudo ./setup.sh             # Run automated setup
+```
+
+Run with `--dry-run` to preview what will be done:
+```bash
+sudo ./setup.sh --dry-run
+```
+
+**Total time: 35-80 minutes** (mostly unattended OMV install)
+
+The guide below provides the complete **manual setup instructions** if you prefer to configure everything step-by-step.
+
+---
 
 ## Table of Contents
 
 1. [Basic Configuration](#1-basic-configuration "Goto 1. Basic Condguration")
 2. [NordVPN](#2-nordvpn "Goto 2. NordVPN")
-3. [OpenMediaVault](#3-openmediavault "Goto 3. OpenMediaVault") 
+3. [OpenMediaVault](#3-openmediavault "Goto 3. OpenMediaVault")
 4. [Docker and Portainer](#4-Docker-and-Portainer "Goto 4. Docker and Portainer")
 5. [Transmission](#5-Transmission "Goto 5. Transmission")
 6. [Prowlarr](#6-Prowlarr "Goto 6. Prowlarr")
 7. [Sonarr](#7-Sonarr "Goto 7. Sonarr")
 8. [Radarr](#8-Radarr "Goto 8. Radarr")
 9. [Jellyfin](#9-jellyfin "Goto 9. Jellyfin")
-10. [Watchtower](#10-watchtower "Goto 10. Watchtower")
+10. [Byparr](#10-byparr "Goto 10. Byparr")
 
 ## Extras
 1. [Push Notifications](#1-Push-Notifications "Goto 1. Push Notifications")
 2. [Access your HC4 remotely](#2-Access-your-HC4-remotely "Goto 2. Access your HC4 remotely")
-3. [Jellyseerr](#3-jellyseerr "Goto 3. Jellyseerr")
-4. [PetitBoot Recovery](#4-PetitBoot-Recovery "Goto 4. PetitBoot Recovery")
-
+3. [PetitBoot Recovery](#3-PetitBoot-Recovery "Goto 3. PetitBoot Recovery")
 
 
 &nbsp;
-## 1. Basic configuration 
+## 1. Basic configuration
 
 ### 1.1 Install DietPi
 
 [DietPi](https://dietpi.com) is a minimal version of Debian, designed to use less CPU power and have a lower RAM usage.
 
-1. Flash [DietPi_OdroidC4-ARMv8-Bullseye.img](https://dietpi.com/downloads/images/DietPi_OdroidC4-ARMv8-Bullseye.7z) ([alternative link](https://www.dropbox.com/s/9j2basmljzzpw20/DietPi_OdroidC4-ARMv8-Bullseye.7z?dl=0)) on an SD card using [Etcher](https://www.balena.io/etcher) or [dd](https://askubuntu.com/a/377561).
+1. Flash [DietPi_OdroidHC4-ARMv8-Trixie.img](https://dietpi.com/downloads/images/) on an SD card using [Etcher](https://www.balena.io/etcher) or [dd](https://askubuntu.com/a/377561).
 2. Insert the SD card in the HC4, then wait until you can see it connected to your network.
 3. Connect via ssh using usr:root pwd:dietpi.
 4. Complete the installation process.
@@ -47,7 +85,7 @@ Main features:
 
 The HC4 uses [PetitBoot](https://manpages.ubuntu.com/manpages/xenial/man8/petitboot.8.html) as a bootloader, which is currently not compatible with DietPi. It mean that on startup, PetitBoot won’t boot on the OS automatically. This can be bypassed by pressing the boot switch under the case while booting.
 
-In order to automatically boot on the DietPi, you must bypass Petitboot. 
+In order to automatically boot on the DietPi, you must bypass Petitboot.
 1. Remove the SD card.
 2. Start the HC4 and wait for PetitBoot to load.
 3. Select "Exit to shell".
@@ -88,7 +126,7 @@ MINPWM= hwmon2/pwm1=10
 &nbsp;
 ## 2. NordVPN
 
-[NordVPN](https://nordvpn.com/) will be your VPN used in order to download safely.  
+[NordVPN](https://nordvpn.com/) will be your VPN used in order to download safely.
 
 ### 2.1 Install and Log In
 
@@ -134,11 +172,11 @@ The command above should have also installed omv-extra which will allow to insta
     1. Go to Storage > Shared Folders, click on +.
     2. Fill in the form, using your drive or RAID array for the File System.
     3. Go to Services > SMB/CIFS > Settings. Enable and save.
-    4. Go to Services > SMB/CIFS > Shares. Click on +. 
+    4. Go to Services > SMB/CIFS > Shares. Click on +.
     5. Fill in the form, selecting your shared folder, and setting "No" for the public field. Save.
 7. Create a user
     1. Go to Users > Users, click on +.
-    2. Fill in the form, save. 
+    2. Fill in the form, save.
 8. Use your user to connect to your SMB share.
 
 
@@ -147,7 +185,7 @@ The command above should have also installed omv-extra which will allow to insta
 
 [Portainer](https://www.portainer.io) is a Docker container manager that comes with a convenient UI.
 
-Via omv-extras in OMV: 
+Via omv-extras in OMV:
 1. Install Docker, then reboot.
 2. Then install Portainer, then reboot. Note: After trying, a generic error message was displayed. Installing the following packages fixed it: `apt install apparmor apparmor-utils auditd`
 3. Go to `http://<HC4-IP>:9000`.
@@ -185,7 +223,7 @@ docker run --detach \
 
 2. Go to: `http://<HC4-IP>:9091`.
 
-[Prowlarr](https://prowlarr.com) is an torrent indexer manager/proxy. Those indexers will be used by Sonarr and Radarr to download content. 
+[Prowlarr](https://prowlarr.com) is an torrent indexer manager/proxy. Those indexers will be used by Sonarr and Radarr to download content.
 
 &nbsp;
 ## 6. Prowlarr
@@ -221,6 +259,36 @@ docker run --detach \
 2. Click Add then select Transmission.
 3. Fill in the form and save.
 
+### 6.4. Configure Byparr for Cloudflare Bypass
+
+[Byparr](https://github.com/ThePhaseless/Byparr) is a tool that bypasses Cloudflare and other anti-bot protection, allowing Prowlarr to access indexers that would otherwise be blocked.
+
+1. Create the Byparr container by executing:
+```
+# Use your own time zone for TZ https://w.wiki/4Jx
+docker run --detach \
+  --name=Byparr \
+  --env HOST=0.0.0.0 \
+  --env PORT=8191 \
+  --publish 8191:8191 \
+  --restart unless-stopped \
+  ghcr.io/thephaseless/byparr:latest
+```
+[documentation](https://github.com/ThePhaseless/Byparr)
+
+2. Go to: `http://<HC4-IP>:8191` to verify it's running.
+
+3. In Prowlarr, register Byparr as a FlareSolverr-compatible proxy:
+   1. Go to Settings > Indexer Proxies.
+   2. Click Add then select FlareSolverr.
+   3. Fill in the form:
+      - Name: `Byparr`
+      - Host: `http://localhost:8191`
+      - Request Timeout: `60`
+   4. Save.
+
+4. When adding indexers, if Cloudflare protection is detected, Prowlarr will automatically use Byparr to bypass it.
+
 
 
 &nbsp;
@@ -230,7 +298,7 @@ docker run --detach \
 
 ### 7.1. Install
 
-1. Create the following directories: 
+1. Create the following directories:
   - /home/dietpi/Docker/Sonarr.
   - /data/media/tv
 2. Deploy Sonarr by executing:
@@ -291,11 +359,11 @@ You can apply quality or language profiles to your TV Show in order for Sonarr t
 &nbsp;
 ## 8. Radarr
 
-[Radarr](https://radarr.video) is a movie collection manager. It will allow you to download movies via BitTorrent using torrent files from indexers provided by Prowlarr.  
+[Radarr](https://radarr.video) is a movie collection manager. It will allow you to download movies via BitTorrent using torrent files from indexers provided by Prowlarr.
 
 ### 8.1. Install
 
-1. Create the following directories: 
+1. Create the following directories:
   - /home/dietpi/Docker/Radarr
   - /data/media/movies
 2. Deploy Sonarr by executing:
@@ -354,7 +422,7 @@ Contratily to Sonarr, Radarr has only one type of profile which contains both th
 &nbsp;
 ## 9. Jellyfin
 
-[Jellyfin](https://jellyfin.org) is the media server that you will use to access your movies and tv shows. 
+[Jellyfin](https://jellyfin.org) is the media server that you will use to access your movies and tv shows.
 
 ### 9.1. Install
 
@@ -389,25 +457,39 @@ docker run --detach \
 
 
 &nbsp;
-## 10. Watchtower
+## 10. Byparr
 
-[Watchtower](https://containrrr.dev/watchtower/) will keep your docker container updated. 
+[Byparr](https://github.com/ThePhaseless/Byparr) is an anti-bot bypass service that allows Prowlarr to access indexers protected by Cloudflare and similar services.
 
-Create and run a Watchtower container that will schedule updates at 4am everyday, and delete old images after updating.
-Do so by executing:
+### 10.1. Install
 
+1. Deploy Byparr by executing:
 ```
-# Use your own time zone for TZ https://w.wiki/4Jx
 docker run --detach \
-  --name Watchtower \
-  --env WATCHTOWER_SCHEDULE="* * 4 * * *" \
-  --env TZ=Canada/Eastern \
-  --env WATCHTOWER_CLEANUP="true" \
-  --volume /var/run/docker.sock:/var/run/docker.sock \
+  --name=Byparr \
+  --env HOST=0.0.0.0 \
+  --env PORT=8191 \
+  --publish 8191:8191 \
   --restart unless-stopped \
-  containrrr/watchtower
+  ghcr.io/thephaseless/byparr:latest
 ```
-[documentation](https://containrrr.dev/watchtower/)
+[documentation](https://github.com/ThePhaseless/Byparr)
+
+2. Go to: `http://<HC4-IP>:8191` to verify Byparr is running.
+
+### 10.2. Configure in Prowlarr
+
+1. In Prowlarr, go to Settings > Indexer Proxies.
+2. Click Add then select FlareSolverr.
+3. Fill in the form:
+   - Name: `Byparr`
+   - Host: `http://localhost:8191`
+   - Request Timeout: `60`
+4. Save.
+
+### 10.3. Usage
+
+Byparr is now configured to automatically bypass Cloudflare protection for indexers in Prowlarr. When you add indexers that have Cloudflare protection, Prowlarr will automatically use Byparr to handle the challenge. No additional configuration is needed per-indexer.
 
 
 
@@ -428,7 +510,7 @@ In order to enable push notification on your devices when a movie or TV show is 
     1. Go to Settings > Configuration > Sonarr/Radarr > Connection Details.
     2. Fill in Host and API Key. To retrieve the API key, in Sonarr/Radarr, go to Settings > General.
     3. In LunaSea, go to Settings > Notifications > Sonarr/Radarr and press on Device to copy the URL. Alternatively, to get the notification on all your devices with LunaSea installed, you can create a LunaSea account an copy the User URL.
-3. In Sonarr/Radarr, 
+3. In Sonarr/Radarr,
     1. Settings > Connect, and click on +.
     2. Select Webhook and fill in the Name and URL fields using the URL you copied from LunaSea
     3. Click on Save and you should get a test notification.
@@ -459,32 +541,7 @@ To access your HC4, you can use NordVPN Meshnet which is a feature that allows t
 
 
 
-## 3. Jellyseerr
-
-[Jellyseerr](https://github.com/Fallenbagel/jellyseerr) allows to manage requests to Sonarr and Radarr as well as suggesting new movies and TV shows based on your Jellyfin libreary.
-
-### 3.1 Install Jellyseerr
-
-Create and run Jellyseerr container by executing:
-
-```
-docker run -d \
-  --name Jellyseerr \
-  --env TZ=Canada/Eastern \
-  --publish 5055:5055 \
-  --volume /home/dietpi/Docker/Jellyseerr:/app/config \
-  --restart unless-stopped \
-  fallenbagel/jellyseerr:latest
-```
-
-### 3.2 Setup
-
-1. Sign-in using Jellyfin, scan for repositories on Jellyfin, select collections, movies, tv shows.
-2. Add your Sonarr and Radarr server informations.
-
-
-
-## 4. PetitBoot Recovery
+## 3. PetitBoot Recovery
 
 If you need to re-enable PetitBoot after doing the process to bypass it, do:
 
@@ -517,9 +574,9 @@ If you need to re-enable PetitBoot after doing the process to bypass it, do:
 - [Radarr - Docker.com](https://hub.docker.com/r/linuxserver/radarr)
 - [Jellyfin - Docker.com](https://hub.docker.com/r/linuxserver/jellyfin)
 - [Hardlinks - trash-guides.info](https://trash-guides.info/Hardlinks/Hardlinks-and-Instant-Moves/)
-- [Watchtower Documentation - containrrr.dev](https://containrrr.dev/watchtower/)
+- [Byparr - github.com](https://github.com/ThePhaseless/Byparr)
 - [Radarr notifications - lunasea.app](https://docs.lunasea.app/lunasea/notifications/radarr)
 - [Sonarr notifications - lunasea.app](https://docs.lunasea.app/lunasea/notifications/sonarr)
 - [How to use Meshnet on Linux - nordvpn.com](https://support.nordvpn.com/General-info/Features/1872910282/How-to-use-Meshnet-on-Linux.htm)
-- [Jellyseer - github.com/Fallenbagel](https://github.com/Fallenbagel/jellyseerr)
+
 - [PetitBoot images - linuxfactory.or.kr](http://ppa.linuxfactory.or.kr/images/petitboot/odroidhc4/)
