@@ -58,7 +58,6 @@ DIRS=(
     "/media/torrents"
     "/media/media/tv"
     "/media/media/movies"
-    # Note: Byparr is stateless; no config directory needed
 )
 
 for dir in "${DIRS[@]}"; do
@@ -125,7 +124,7 @@ if [[ "$DRY_RUN" != "true" ]]; then
         sleep $RETRY_DELAY
 
         # Verify all containers are running
-        EXPECTED_CONTAINERS=("Transmission" "Prowlarr" "Sonarr" "Radarr" "Jellyfin" "Byparr")
+         EXPECTED_CONTAINERS=("Transmission" "Prowlarr" "Sonarr" "Radarr" "Jellyfin" "FlareSolverr")
         all_running=true
 
         for cname in "${EXPECTED_CONTAINERS[@]}"; do
@@ -169,7 +168,7 @@ echo "  Prowlarr:     http://${IP}:9696"
 echo "  Sonarr:       http://${IP}:8989"
 echo "  Radarr:       http://${IP}:7878"
 echo "  Jellyfin:     http://${IP}:8096"
-echo "  Byparr:       http://${IP}:8191"
+echo "  FlareSolverr: http://${IP}:8191"
 echo ""
 
 mark_done "$STEP_NAME"

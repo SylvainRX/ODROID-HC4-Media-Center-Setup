@@ -1,6 +1,6 @@
 # ODROID-HC4 Automated Setup Scripts
 
-Automated installation scripts for setting up an ODROID-HC4 media center with Jellyfin, Sonarr, Radarr, Prowlarr, Transmission, Byparr, and OpenMediaVault.
+Automated installation scripts for setting up an ODROID-HC4 media center with Jellyfin, Sonarr, Radarr, Prowlarr, Transmission, FlareSolverr, and OpenMediaVault.
 
 ## Quick Start
 
@@ -51,8 +51,8 @@ The script will:
 3. Interactively select your media drive and create the `/media` symlink
 4. Install and configure NordVPN (if token provided, otherwise skipped)
 5. Install Docker and Docker Compose
-6. Deploy all 6 containers via docker-compose (Transmission, Prowlarr, Sonarr, Radarr, Jellyfin, Byparr)
-7. Wire services together via REST APIs (including Byparr proxy registration)
+6. Deploy all 6 containers via docker-compose (Transmission, Prowlarr, Sonarr, Radarr, Jellyfin, FlareSolverr)
+7. Wire services together via REST APIs (including FlareSolverr proxy registration)
 8. Configure Nginx reverse proxy with path-based routing (all services on port 80)
 
 ---
@@ -66,8 +66,8 @@ The script will:
 | **Drive Setup** | ✅ Interactive drive selection, `/media` symlink creation | None (interactive prompt) |
 | **NordVPN** | ✅ Install, login, subnet detection, P2P connection, autoconnect, DNS config | Generate access token (one-time), or skip entirely |
 | **Docker** | ✅ Install Docker Engine, Compose plugin, DNS config, apparmor workaround | None |
-| **Containers** | ✅ All 6 containers deployed (Transmission, Prowlarr, Sonarr, Radarr, Jellyfin, Byparr) | None |
-| **Service Wiring** | ✅ Prowlarr↔Sonarr/Radarr, Prowlarr↔Byparr proxy, Transmission setup, hardlinks enabled | Add indexers in Prowlarr web UI |
+| **Containers** | ✅ All 6 containers deployed (Transmission, Prowlarr, Sonarr, Radarr, Jellyfin, FlareSolverr) | None |
+| **Service Wiring** | ✅ Prowlarr↔Sonarr/Radarr, Prowlarr↔FlareSolverr proxy, Transmission setup, hardlinks enabled | Add indexers in Prowlarr web UI |
 | **Jellyfin** | ✅ Container deployed | Create admin account on first visit |
 | **Nginx Proxy** | ✅ Path-based routing on port 80 for all services, base URLs configured | None |
 
@@ -155,7 +155,7 @@ Select your media drive:
    - `/home/dietpi/Docker/{Transmission,Prowlarr,Sonarr,Radarr,Jellyfin}`
    - `/media/torrents`
    - `/media/media/{tv,movies}`
-   - Note: Byparr is stateless; no config directory needed
+   - Note: FlareSolverr is stateless; no config directory needed
 - Generates `docker-compose.yml` from template (substitutes `TZ`, `PUID`, etc.)
 - Runs `docker compose up -d`
 - Verifies all 6 containers are running
@@ -173,9 +173,9 @@ Select your media drive:
 - Adds Transmission as download client in Sonarr and Radarr
 - Enables hardlinks in Sonarr and Radarr
 - Adds root folders (`/tv`, `/movies`)
-- Registers Byparr as FlareSolverr-compatible indexer proxy in Prowlarr
+- Registers FlareSolverr as FlareSolverr-compatible indexer proxy in Prowlarr
 
-**Result:** Once you add indexers in Prowlarr's web UI, they automatically sync to Sonarr and Radarr. Cloudflare-protected indexers automatically use Byparr. Downloads via Transmission are automatically configured.
+**Result:** Once you add indexers in Prowlarr's web UI, they automatically sync to Sonarr and Radarr. Cloudflare-protected indexers automatically use FlareSolverr. Downloads via Transmission are automatically configured.
 
 **Duration:** 1-2 minutes  
 **User input:** None
@@ -232,7 +232,7 @@ http://192.168.0.84/transmission
 - `http://<HC4-IP>:7878` → Radarr
 - `http://<HC4-IP>:9696` → Prowlarr
 - `http://<HC4-IP>:9091` → Transmission
-- `http://<HC4-IP>:8191` → FlareSolverr/Byparr (API-only)
+- `http://<HC4-IP>:8191` → FlareSolverr/FlareSolverr (API-only)
 
 **Duration:** 1-2 minutes  
 **User input:** None
@@ -289,10 +289,10 @@ After the automated setup completes:
 
 1. **Add indexers in Prowlarr:** `http://<HC4-IP>:9696`
    - Add torrent indexers (The Pirate Bay, 1337x, etc.)
-   - Cloudflare-protected indexers will automatically use Byparr
+   - Cloudflare-protected indexers will automatically use FlareSolverr
    - They will automatically sync to Sonarr and Radarr
 
-2. **Verify Byparr:** `http://<HC4-IP>:8191`
+2. **Verify FlareSolverr:** `http://<HC4-IP>:8191`
    - Confirm the service is running
    - You can check the API docs at `/docs`
 
@@ -335,7 +335,7 @@ After deployment, access services at:
 | Sonarr | `http://<HC4-IP>:8989` | Set on first visit |
 | Radarr | `http://<HC4-IP>:7878` | Set on first visit |
 | Jellyfin | `http://<HC4-IP>:8096` | Set on first visit |
-| Byparr | `http://<HC4-IP>:8191` | (none) |
+| FlareSolverr | `http://<HC4-IP>:8191` | (none) |
 
 ### Via Meshnet (Remote Access)
 Replace `<HC4-IP>` with your Meshnet hostname (e.g., `rx.sylvain-atlas.nord`)
@@ -417,11 +417,11 @@ scripts/
 │   ├── 03_set_data_drive.sh    # Interactive drive selection, /media symlink
 │   ├── 04_nordvpn.sh           # Includes DNS config sub-step
 │   ├── 05_docker_install.sh    # Includes daemon DNS config
-│   ├── 06_containers.sh        # Includes Byparr container
-│   ├── 07_wire_services.sh     # Includes Byparr proxy registration
+│   ├── 06_containers.sh        # Includes FlareSolverr container
+│   ├── 07_wire_services.sh     # Includes FlareSolverr proxy registration
 │   └── 08_nginx_reverse_proxy.sh # Reverse proxy with path-based routing
 └── templates/
-    └── docker-compose.yml.tpl  # Container definitions (includes Byparr)
+    └── docker-compose.yml.tpl  # Container definitions (includes FlareSolverr)
 
 State tracking:
 /var/lib/odroid-setup/*.done    # Completion flags

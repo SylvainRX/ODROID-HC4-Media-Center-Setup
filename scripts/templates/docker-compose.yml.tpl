@@ -82,12 +82,12 @@ services:
       - /media/media/movies:/data/Movies
     restart: unless-stopped
 
-   byparr:
-    image: ghcr.io/thephaseless/byparr:latest
-    container_name: Byparr
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: FlareSolverr
+    environment:
+      - LOG_LEVEL=info
+      - HEADLESS=true
     ports:
       - "8191:8191"
-    environment:
-      - HOST=0.0.0.0
-      - PORT=8191
     restart: unless-stopped

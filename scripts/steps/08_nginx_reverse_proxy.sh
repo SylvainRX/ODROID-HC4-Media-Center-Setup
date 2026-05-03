@@ -657,8 +657,8 @@ else
         fi
     done
     
-    # Note: FlareSolverr/Byparr is API-only and accessed directly by Prowlarr on port 8191
-    log "  ℹ FlareSolverr: http://localhost:8191 (API-only, accessed directly by Prowlarr)"
+     # Note: FlareSolverr is API-only and accessed directly by Prowlarr on port 8191
+     log "  ℹ FlareSolverr: http://localhost:8191 (API-only, accessed directly by Prowlarr)"
     
     echo ""
     if [[ $FAILED_CHECKS -eq 0 ]]; then
@@ -711,7 +711,7 @@ echo "  http://192.168.0.84/transmission"
 echo ""
 echo "Direct port access still available at http://<ip>:<port>"
 echo ""
-echo "FlareSolverr (Byparr): http://<ip>:8191 (API-only, accessed directly)"
+echo "FlareSolverr: http://<ip>:8191 (API-only, accessed directly)"
 echo ""
 
 mark_done "$STEP_NAME"

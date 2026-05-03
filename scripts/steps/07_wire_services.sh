@@ -63,7 +63,7 @@ if [[ "$DRY_RUN" != "true" ]]; then
     wait_for_http "http://localhost:8989" 120  # Sonarr
     wait_for_http "http://localhost:7878" 120  # Radarr
     wait_for_http "http://localhost:9091" 120  # Transmission
-    wait_for_http "http://localhost:8191" 120  # Byparr
+     wait_for_http "http://localhost:8191" 120  # FlareSolverr
 fi
 
 # -------------------------------------------------------------------------
@@ -383,34 +383,35 @@ api_post "http://localhost:7878/api/v3/rootfolder" "$RADARR_KEY" \
     "Add /movies root folder in Radarr"
 
 # -------------------------------------------------------------------------
-# 8. Add Byparr as FlareSolverr proxy in Prowlarr
+# 8. Add FlareSolverr as indexer proxy in Prowlarr
 # -------------------------------------------------------------------------
 #
-# Byparr is a Cloudflare anti-bot bypass service compatible with Prowlarr's
-# FlareSolverr indexer proxy interface. Once registered, Prowlarr will use
-# Byparr to bypass Cloudflare protection on torrent indexers automatically.
+# FlareSolverr is a Cloudflare anti-bot bypass service that allows Prowlarr
+# to access indexers protected by Cloudflare and similar anti-bot systems.
+# Once registered, Prowlarr will automatically use FlareSolverr to bypass
+# Cloudflare protection on torrent indexers.
 #
 
-log_step "Registering Byparr as indexer proxy in Prowlarr..."
+log_step "Registering FlareSolverr as indexer proxy in Prowlarr..."
 
-BYPARR_PROXY_PAYLOAD="$(cat <<EOF
+FLARESOLVERR_PROXY_PAYLOAD="$(cat <<EOF
 {
-  "name": "Byparr",
+  "name": "FlareSolverr",
   "implementationName": "FlareSolverr",
   "implementation": "FlareSolverr",
   "configContract": "FlareSolverrSettings",
   "supportsAny": true,
-  "tags": [],
+  "tags": [flaresolverr],
   "fields": [
-    { "name": "host", "value": "http://byparr:8191" },
+    { "name": "host", "value": "http://flaresolverr:8191" },
     { "name": "requestTimeout", "value": 60 }
   ]
 }
 EOF
 )"
 
-api_post "http://localhost:9696/api/v1/indexerproxy" "$PROWLARR_KEY" "$BYPARR_PROXY_PAYLOAD" \
-    "Register Byparr as indexer proxy in Prowlarr"
+api_post "http://localhost:9696/api/v1/indexerproxy" "$PROWLARR_KEY" "$FLARESOLVERR_PROXY_PAYLOAD" \
+    "Register FlareSolverr as indexer proxy in Prowlarr"
 
 # -------------------------------------------------------------------------
 # Summary
@@ -422,7 +423,7 @@ echo "The following connections have been configured:"
 echo ""
 echo "  Prowlarr -> Sonarr  (indexer sync)"
 echo "  Prowlarr -> Radarr  (indexer sync)"
-echo "  Prowlarr -> Byparr  (Cloudflare bypass proxy)"
+echo "  Prowlarr -> FlareSolverr  (Cloudflare bypass proxy)"
 echo "  Sonarr   -> Transmission (download client)"
 echo "  Radarr   -> Transmission (download client)"
 echo "  Sonarr   : hardlinks enabled"
@@ -432,7 +433,7 @@ echo "  Radarr   : root folder /movies"
 echo ""
 echo "Remaining manual steps:"
 echo "  1. Add indexers in Prowlarr (http://${IP}:9696)"
-echo "     Cloudflare-protected indexers will automatically use Byparr."
+echo "     Cloudflare-protected indexers will automatically use FlareSolverr."
 echo "     They will automatically sync to Sonarr and Radarr."
 echo "  2. Complete Jellyfin setup (http://${IP}:8096)"
 echo "     Create your admin account and add media libraries."

@@ -62,7 +62,7 @@ The guide below provides the complete **manual setup instructions** if you prefe
 7. [Sonarr](#7-Sonarr "Goto 7. Sonarr")
 8. [Radarr](#8-Radarr "Goto 8. Radarr")
 9. [Jellyfin](#9-jellyfin "Goto 9. Jellyfin")
-10. [Byparr](#10-byparr "Goto 10. Byparr")
+10. [FlareSolverr](#10-flaresolverr "Goto 10. FlareSolverr")
 
 ## Extras
 1. [Push Notifications](#1-Push-Notifications "Goto 1. Push Notifications")
@@ -261,35 +261,22 @@ docker run --detach \
 2. Click Add then select Transmission.
 3. Fill in the form and save.
 
-### 6.4. Configure Byparr for Cloudflare Bypass
+### 6.4. Configure FlareSolverr for Cloudflare Bypass
 
-[Byparr](https://github.com/ThePhaseless/Byparr) is a tool that bypasses Cloudflare and other anti-bot protection, allowing Prowlarr to access indexers that would otherwise be blocked.
+[FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) bypasses Cloudflare and other anti-bot protection, allowing Prowlarr to access indexers that would otherwise be blocked.
 
-1. Create the Byparr container by executing:
-```
-# Use your own time zone for TZ https://w.wiki/4Jx
-docker run --detach \
-  --name=Byparr \
-  --env HOST=0.0.0.0 \
-  --env PORT=8191 \
-  --publish 8191:8191 \
-  --restart unless-stopped \
-  ghcr.io/thephaseless/byparr:latest
-```
-[documentation](https://github.com/ThePhaseless/Byparr)
+Note: FlareSolverr is automatically deployed as part of your system. If you're using the automated setup script, this is already configured.
 
-2. Go to: `http://<HC4-IP>:8191` to verify it's running.
-
-3. In Prowlarr, register Byparr as a FlareSolverr-compatible proxy:
+1. In Prowlarr, configure FlareSolverr as an indexer proxy:
    1. Go to Settings > Indexer Proxies.
    2. Click Add then select FlareSolverr.
    3. Fill in the form:
-      - Name: `Byparr`
-      - Host: `http://localhost:8191`
+      - Name: `FlareSolverr`
+      - Host: `http://flaresolverr:8191`
       - Request Timeout: `60`
    4. Save.
 
-4. When adding indexers, if Cloudflare protection is detected, Prowlarr will automatically use Byparr to bypass it.
+2. When adding indexers, if Cloudflare protection is detected, Prowlarr will automatically use FlareSolverr to bypass it.
 
 
 
@@ -459,39 +446,27 @@ docker run --detach \
 
 
 &nbsp;
-## 10. Byparr
+## 10. FlareSolverr
 
-[Byparr](https://github.com/ThePhaseless/Byparr) is an anti-bot bypass service that allows Prowlarr to access indexers protected by Cloudflare and similar services.
+[FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) is an anti-bot bypass service that allows Prowlarr to access indexers protected by Cloudflare and similar services.
 
-### 10.1. Install
+### 10.1. What is FlareSolverr?
 
-1. Deploy Byparr by executing:
-```
-docker run --detach \
-  --name=Byparr \
-  --env HOST=0.0.0.0 \
-  --env PORT=8191 \
-  --publish 8191:8191 \
-  --restart unless-stopped \
-  ghcr.io/thephaseless/byparr:latest
-```
-[documentation](https://github.com/ThePhaseless/Byparr)
-
-2. Go to: `http://<HC4-IP>:8191` to verify Byparr is running.
+FlareSolverr runs as a headless browser service that automatically bypasses Cloudflare and other anti-bot protection. It's already deployed as part of your system on port 8191.
 
 ### 10.2. Configure in Prowlarr
 
 1. In Prowlarr, go to Settings > Indexer Proxies.
 2. Click Add then select FlareSolverr.
 3. Fill in the form:
-   - Name: `Byparr`
-   - Host: `http://localhost:8191`
+   - Name: `FlareSolverr`
+   - Host: `http://flaresolverr:8191`
    - Request Timeout: `60`
 4. Save.
 
 ### 10.3. Usage
 
-Byparr is now configured to automatically bypass Cloudflare protection for indexers in Prowlarr. When you add indexers that have Cloudflare protection, Prowlarr will automatically use Byparr to handle the challenge. No additional configuration is needed per-indexer.
+FlareSolverr is now configured to automatically bypass Cloudflare protection for indexers in Prowlarr. When you add indexers that have Cloudflare protection (like 1337x), Prowlarr will automatically use FlareSolverr to handle the challenge. No additional configuration is needed per-indexer.
 
 
 
@@ -561,7 +536,7 @@ Nginx is configured as a reverse proxy to provide path-based routing to all serv
    - `/prowlarr` → Prowlarr (port 9696)
    - `/transmission` → Transmission (port 9091)
 
-- **Port 8191:** FlareSolverr/Byparr (API-only, accessed directly by Prowlarr)
+- **Port 8191:** FlareSolverr (API-only, accessed directly by Prowlarr)
 
 #### 2.1.2. Access Methods
 
@@ -573,7 +548,7 @@ Nginx is configured as a reverse proxy to provide path-based routing to all serv
 | Radarr | `http://<meshnet-hostname>/radarr` | `http://192.168.0.84/radarr` | `http://192.168.0.84:7878` |
 | Prowlarr | `http://<meshnet-hostname>/prowlarr` | `http://192.168.0.84/prowlarr` | `http://192.168.0.84:9696` |
 | Transmission | `http://<meshnet-hostname>/transmission` | `http://192.168.0.84/transmission` | `http://192.168.0.84:9091` |
-| FlareSolverr/Byparr | — | — | `http://192.168.0.84:8191` |
+| FlareSolverr | — | — | `http://192.168.0.84:8191` |
 
 **Note:** Meshnet access is recommended for remote access. All services are still accessible directly on their original ports.
 
@@ -648,7 +623,7 @@ If you need to re-enable PetitBoot after doing the process to bypass it, do:
 - [Radarr - Docker.com](https://hub.docker.com/r/linuxserver/radarr)
 - [Jellyfin - Docker.com](https://hub.docker.com/r/linuxserver/jellyfin)
 - [Hardlinks - trash-guides.info](https://trash-guides.info/Hardlinks/Hardlinks-and-Instant-Moves/)
-- [Byparr - github.com](https://github.com/ThePhaseless/Byparr)
+- [FlareSolverr - github.com](https://github.com/FlareSolverr/FlareSolverr)
 - [Radarr notifications - lunasea.app](https://docs.lunasea.app/lunasea/notifications/radarr)
 - [Sonarr notifications - lunasea.app](https://docs.lunasea.app/lunasea/notifications/sonarr)
 - [How to use Meshnet on Linux - nordvpn.com](https://support.nordvpn.com/General-info/Features/1872910282/How-to-use-Meshnet-on-Linux.htm)
