@@ -53,6 +53,7 @@ The script will:
 5. Install Docker and Docker Compose
 6. Deploy all 6 containers via docker-compose (Transmission, Prowlarr, Sonarr, Radarr, Jellyfin, Byparr)
 7. Wire services together via REST APIs (including Byparr proxy registration)
+8. Configure Nginx reverse proxy with path-based routing (all services on port 80)
 
 ---
 
@@ -68,6 +69,7 @@ The script will:
 | **Containers** | ✅ All 6 containers deployed (Transmission, Prowlarr, Sonarr, Radarr, Jellyfin, Byparr) | None |
 | **Service Wiring** | ✅ Prowlarr↔Sonarr/Radarr, Prowlarr↔Byparr proxy, Transmission setup, hardlinks enabled | Add indexers in Prowlarr web UI |
 | **Jellyfin** | ✅ Container deployed | Create admin account on first visit |
+| **Nginx Proxy** | ✅ Path-based routing on port 80 for all services, base URLs configured | None |
 
 ---
 
@@ -180,6 +182,64 @@ Select your media drive:
 
 ---
 
+### Step 08: Nginx Reverse Proxy
+
+**Automated:**
+- Reconfigures OpenMediaVault nginx to listen on port 8080 (removes port 80 conflict)
+- Installs Nginx package
+- Creates reverse proxy configuration with path-based routing
+- Configures base URLs for all services (Sonarr, Radarr, Prowlarr, Jellyfin, Transmission)
+- Enables WebSocket support for real-time features
+- Verifies all endpoints are accessible through the proxy
+
+**What you get:**
+- All services accessible via port 80 with paths instead of remembering different ports
+- Single entry point for both local network and Meshnet access
+- Proper proxy headers (X-Forwarded-For, X-Real-IP, etc.)
+- 100MB upload size limit for file uploads
+- Disabled buffering for Jellyfin media streaming
+
+**Service access after Step 08:**
+```
+http://<meshnet-hostname>/omv           → OpenMediaVault
+http://<meshnet-hostname>/jellyfin      → Jellyfin Media Server
+http://<meshnet-hostname>/sonarr        → Sonarr (TV Shows)
+http://<meshnet-hostname>/radarr        → Radarr (Movies)
+http://<meshnet-hostname>/prowlarr      → Prowlarr (Indexer Manager)
+http://<meshnet-hostname>/transmission  → Transmission (Download Client)
+```
+
+**Or via local IP:**
+```
+http://192.168.0.84/omv
+http://192.168.0.84/jellyfin
+http://192.168.0.84/sonarr
+http://192.168.0.84/radarr
+http://192.168.0.84/prowlarr
+http://192.168.0.84/transmission
+```
+
+**Direct port access still works:**
+- `http://<HC4-IP>:8080` → OpenMediaVault (moved from 80)
+- `http://<HC4-IP>:8096` → Jellyfin
+- `http://<HC4-IP>:8989` → Sonarr
+- `http://<HC4-IP>:7878` → Radarr
+- `http://<HC4-IP>:9696` → Prowlarr
+- `http://<HC4-IP>:9091` → Transmission
+- `http://<HC4-IP>:8191` → FlareSolverr/Byparr (API-only)
+
+**Duration:** 1-2 minutes  
+**User input:** None
+
+**Error handling:**
+- APT repository issues are gracefully handled
+- OMV port reconfiguration persists even if salt-minion reverts changes
+- Jellyfin config uses API with fallback to config file editing
+- Transmission config validated before and after modification
+- All endpoint verification skips FlareSolverr (API-only service)
+
+---
+
 ## Command Reference
 
 ### Basic Usage
@@ -238,15 +298,29 @@ After the automated setup completes:
 
 After deployment, access services at:
 
+### Via Nginx Reverse Proxy (Recommended - port 80)
 | Service | URL | Default Login |
 |---------|-----|---------------|
-| OpenMediaVault | `http://<HC4-IP>` | admin / openmediavault |
+| OpenMediaVault | `http://<HC4-IP>/omv` | admin / openmediavault |
+| Transmission | `http://<HC4-IP>/transmission` | (none) |
+| Prowlarr | `http://<HC4-IP>/prowlarr` | Set on first visit |
+| Sonarr | `http://<HC4-IP>/sonarr` | Set on first visit |
+| Radarr | `http://<HC4-IP>/radarr` | Set on first visit |
+| Jellyfin | `http://<HC4-IP>/jellyfin` | Set on first visit |
+
+### Direct Port Access (Still Available)
+| Service | URL | Default Login |
+|---------|-----|---------------|
+| OpenMediaVault | `http://<HC4-IP>:8080` | admin / openmediavault |
 | Transmission | `http://<HC4-IP>:9091` | (none) |
 | Prowlarr | `http://<HC4-IP>:9696` | Set on first visit |
 | Sonarr | `http://<HC4-IP>:8989` | Set on first visit |
 | Radarr | `http://<HC4-IP>:7878` | Set on first visit |
 | Jellyfin | `http://<HC4-IP>:8096` | Set on first visit |
 | Byparr | `http://<HC4-IP>:8191` | (none) |
+
+### Via Meshnet (Remote Access)
+Replace `<HC4-IP>` with your Meshnet hostname (e.g., `rx.sylvain-atlas.nord`)
 
 ---
 
@@ -275,10 +349,32 @@ After deployment, access services at:
 - Check container logs: `docker logs <container-name>`
 - API keys are read from `/home/dietpi/Docker/{Sonarr,Radarr,Prowlarr}/config.xml`
 
+### Nginx reverse proxy issues (step 08)
+- **Services not accessible via proxy:**
+  - Check Nginx status: `sudo systemctl status nginx`
+  - Verify Nginx config: `sudo nginx -t`
+  - Check Nginx error log: `sudo tail -f /var/log/nginx/error.log`
+  - Restart Nginx: `sudo systemctl restart nginx`
+
+- **OpenMediaVault on wrong port:**
+  - Check OMV nginx config: `cat /etc/nginx/sites-available/openmediavault-webgui`
+  - Should have `listen *:8080;` (not 80)
+  - Restart OMV: `sudo systemctl restart openmediavault`
+
+- **Jellyfin configuration failed:**
+  - Script tries API first, falls back to config file edit
+  - Check Jellyfin config: `cat /home/dietpi/Docker/Jellyfin/network.xml`
+  - Should have `<BaseUrl>/jellyfin</BaseUrl>`
+
+- **Service not responding on original port:**
+  - Verify service is running: `docker ps | grep <service-name>`
+  - Check service logs: `docker logs <service-name>`
+  - Restart service: `cd /home/dietpi/Docker && docker compose restart <service-name>`
+
 ### Reset a specific step
 ```bash
-sudo ./setup.sh --reset 05     # Reset step 05
-sudo ./setup.sh --from 05      # Re-run from step 05
+sudo ./setup.sh --reset 08     # Reset step 08 (nginx)
+sudo ./setup.sh --from 08      # Re-run from step 08
 ```
 
 ### View logs
@@ -304,7 +400,8 @@ scripts/
 │   ├── 04_nordvpn.sh           # Includes DNS config sub-step
 │   ├── 05_docker_install.sh    # Includes daemon DNS config
 │   ├── 06_containers.sh        # Includes Byparr container
-│   └── 07_wire_services.sh     # Includes Byparr proxy registration
+│   ├── 07_wire_services.sh     # Includes Byparr proxy registration
+│   └── 08_nginx_reverse_proxy.sh # Reverse proxy with path-based routing
 └── templates/
     └── docker-compose.yml.tpl  # Container definitions (includes Byparr)
 
@@ -312,6 +409,10 @@ State tracking:
 /var/lib/odroid-setup/*.done    # Completion flags
 /var/lib/odroid-setup/backups/  # Config backups
 /var/log/odroid-setup.log       # Setup log
+
+Nginx configuration:
+/etc/nginx/sites-available/media-center      # Generated reverse proxy config
+/etc/nginx/sites-enabled/media-center        # Symlink to enabled config
 ```
 
 ---
@@ -339,7 +440,8 @@ These steps require physical access or are intentionally manual:
 | Step 03 (Drive selection) | <1 minute |
 | Step 04 (NordVPN, optional) | 1-2 minutes |
 | Steps 05-07 (Docker, containers, wiring) | 5-10 minutes |
-| **Total** | **35-80 minutes** |
+| Step 08 (Nginx reverse proxy) | 1-2 minutes |
+| **Total** | **35-82 minutes** |
 
 Compared to manual setup: **~2-3 hours saved**
 

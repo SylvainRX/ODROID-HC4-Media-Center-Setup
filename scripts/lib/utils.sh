@@ -281,3 +281,50 @@ pause_for_manual_step() {
     read -r -p "$msg"
     echo ""
 }
+
+# -----------------------------------------------------------------------------
+# Network detection
+# -----------------------------------------------------------------------------
+
+# Get the local IP address of the HC4 (non-loopback, IPv4)
+get_hc4_ip() {
+    local ip
+    # Try to get the primary non-loopback IPv4 address
+    ip=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "")
+    
+    if [[ -n "$ip" ]] && [[ "$ip" != "127.0.0.1" ]]; then
+        echo "$ip"
+        return 0
+    fi
+    
+    # Fallback: use ip command if available
+    ip=$(ip -4 addr show 2>/dev/null | grep -v 127.0.0.1 | grep 'inet ' | awk '{print $2}' | cut -d/ -f1 | head -1 || echo "")
+    
+    if [[ -n "$ip" ]]; then
+        echo "$ip"
+        return 0
+    fi
+    
+    # Could not detect, return empty
+    echo ""
+    return 1
+}
+
+# Get the NordVPN Meshnet hostname (for this device)
+get_meshnet_hostname() {
+    local hostname
+    
+    # Try nordvpn meshnet peer list to get this device's Meshnet hostname
+    if command -v nordvpn &> /dev/null; then
+        # Parse the "This device:" section to get the Meshnet hostname (rx.xxxxx.nord format)
+        hostname=$(nordvpn meshnet peer list 2>/dev/null | grep -A 5 "^This device:" | grep "Hostname:" | awk -F': ' '{print $2}' | xargs || echo "")
+        if [[ -n "$hostname" ]] && [[ "$hostname" =~ ^rx\..+\.nord$ ]]; then
+            echo "$hostname"
+            return 0
+        fi
+    fi
+    
+    # Could not detect, return empty
+    echo ""
+    return 1
+}
