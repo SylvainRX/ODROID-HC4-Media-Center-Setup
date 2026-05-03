@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Center</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .access-method {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .access-method strong {
+            color: #667eea;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .service-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #333;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .service-link[data-brand-color] {
+            background: var(--brand-color);
+            color: white;
+        }
+
+        .service-link:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .service-link .icon-wrapper {
+            width: 45px;
+            height: 45px;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+        }
+
+        .service-link .icon-wrapper img {
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
+        }
+
+        .service-info {
+            flex: 1;
+        }
+
+        .service-name {
+            font-weight: 600;
+            color: inherit;
+            font-size: 14px;
+        }
+
+        .service-url {
+            display: none;
+        }
+
+        .service-description {
+            font-size: 12px;
+            color: inherit;
+            margin-top: 2px;
+            opacity: 0.85;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+        }
+
+        @media (max-width: 500px) {
+            .container {
+                padding: 25px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .service-link {
+                padding: 12px;
+            }
+
+            .service-link .icon {
+                font-size: 20px;
+                margin-right: 12px;
+            }
+
+            .service-name {
+                font-size: 13px;
+            }
+
+            .service-url {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span style="font-size: 32px;">📺</span> Media Center</h1>
+        <div class="access-method">
+            <div id="access-info">Loading...</div>
+        </div>
+
+        <div class="services-grid" id="services-grid">
+            <div style="text-align: center; color: #999;">Loading services...</div>
+        </div>
+
+        <div class="footer">
+            <p>ODROID-HC4 Media Center Proxy</p>
+        </div>
+    </div>
+
+    <script>
+        // Detect how the user accessed this page and build the appropriate base URL
+        function getBaseUrl() {
+            const host = window.location.host;
+            const protocol = window.location.protocol;
+
+            // Check if accessing via Meshnet (contains 'nord' domain)
+            const isMeshnet = host.includes('.nord');
+
+            if (isMeshnet) {
+                // Extract just the hostname without port
+                const hostname = host.split(':')[0];
+                return {
+                    base: `${protocol}//${hostname}`,
+                    type: 'Meshnet',
+                    hostname: hostname,
+                    description: `Accessed via Meshnet: <strong>${hostname}</strong>`
+                };
+            } else {
+                // Local network access
+                return {
+                    base: `${protocol}//192.168.0.84`,
+                    type: 'Local Network',
+                    hostname: '192.168.0.84',
+                    description: `Accessed via Local Network: <strong>192.168.0.84</strong>`
+                };
+            }
+        }
+
+        // Service definitions with icon paths and brand colors
+        const services = [
+            {
+                name: 'OpenMediaVault',
+                icon: '/images/openmediavault-icon.png',
+                path: '/omv',
+                description: 'System & Storage Management',
+                bgColor: '#7dbbe3'
+            },
+            {
+                name: 'Jellyfin',
+                icon: '/images/jellyfin-icon.png',
+                path: '/jellyfin',
+                description: 'Media Server',
+                bgColor: '#9763c7'
+            },
+            {
+                name: 'Sonarr',
+                icon: '/images/sonarr-icon.png',
+                path: '/sonarr',
+                description: 'TV Shows Manager',
+                bgColor: '#05c7fc'
+            },
+            {
+                name: 'Radarr',
+                icon: '/images/radarr-icon.png',
+                path: '/radarr',
+                description: 'Movies Manager',
+                bgColor: '#db7a13'
+            },
+            {
+                name: 'Prowlarr',
+                icon: '/images/prowlarr-icon.png',
+                path: '/prowlarr',
+                description: 'Indexer Manager',
+                bgColor: '#e8522e'
+            },
+            {
+                name: 'Transmission',
+                icon: '/images/transmission-icon.png',
+                path: '/transmission',
+                description: 'Download Client',
+                bgColor: '#babeb6'
+            }
+        ];
+
+        // Initialize page
+        function initPage() {
+            const urlInfo = getBaseUrl();
+
+            // Update access method display
+            document.getElementById('access-info').innerHTML = urlInfo.description;
+
+            // Build services grid
+            const grid = document.getElementById('services-grid');
+            grid.innerHTML = '';
+
+            services.forEach(service => {
+                const fullUrl = urlInfo.base + service.path;
+                const link = document.createElement('a');
+                link.href = fullUrl;
+                link.className = 'service-link';
+                link.style.setProperty('--brand-color', service.bgColor);
+                link.setAttribute('data-brand-color', service.bgColor);
+                link.innerHTML = `
+                    <div class="icon-wrapper">
+                        <img src="${service.icon}" alt="${service.name}">
+                    </div>
+                    <div class="service-info">
+                        <div class="service-name">${service.name}</div>
+                        <div class="service-description">${service.description}</div>
+                    </div>
+                `;
+                grid.appendChild(link);
+            });
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initPage);
+    </script>
+</body>
+</html>

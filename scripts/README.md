@@ -187,12 +187,18 @@ Select your media drive:
 **Automated:**
 - Reconfigures OpenMediaVault nginx to listen on port 8080 (removes port 80 conflict)
 - Installs Nginx package
+- Deploys a dynamic landing page (`nginx-pages/index.html`) with:
+  - Service cards with branded icons and descriptions
+  - Automatic URL detection (local network vs. NordVPN Meshnet)
+  - Mobile-responsive design
+  - Single entry point to all services
 - Creates reverse proxy configuration with path-based routing
 - Configures base URLs for all services (Sonarr, Radarr, Prowlarr, Jellyfin, Transmission)
 - Enables WebSocket support for real-time features
 - Verifies all endpoints are accessible through the proxy
 
 **What you get:**
+- Dynamic landing page at `/` that detects access method and shows appropriate URLs
 - All services accessible via port 80 with paths instead of remembering different ports
 - Single entry point for both local network and Meshnet access
 - Proper proxy headers (X-Forwarded-For, X-Real-IP, etc.)
@@ -231,12 +237,24 @@ http://192.168.0.84/transmission
 **Duration:** 1-2 minutes  
 **User input:** None
 
+**Landing page features:**
+- **Smart URL detection:** Automatically detects whether you're accessing via local network or NordVPN Meshnet and displays the appropriate URLs
+- **Service cards:** Beautiful branded cards with icons and descriptions for all services
+- **Mobile responsive:** Works seamlessly on desktop, tablet, and mobile devices
+- **Automatic deployment:** The landing page from `nginx-pages/index.html` is automatically copied to `/var/www/media-center/`
+- **Service icons:** Icons from the `images/` directory are deployed alongside the landing page
+
+**Accessing the landing page:**
+- Local Network: `http://192.168.0.84/`
+- Meshnet: `http://<meshnet-hostname>/` (e.g., `http://rx.sylvain-atlas.nord/`)
+
 **Error handling:**
 - APT repository issues are gracefully handled
 - OMV port reconfiguration persists even if salt-minion reverts changes
 - Jellyfin config uses API with fallback to config file editing
 - Transmission config validated before and after modification
 - All endpoint verification skips FlareSolverr (API-only service)
+- Fallback HTML page created if main landing page file is missing
 
 ---
 

@@ -63,11 +63,11 @@ The guide below provides the complete **manual setup instructions** if you prefe
 8. [Radarr](#8-Radarr "Goto 8. Radarr")
 9. [Jellyfin](#9-jellyfin "Goto 9. Jellyfin")
 10. [Byparr](#10-byparr "Goto 10. Byparr")
-11. [Nginx Reverse Proxy (Automated)](#11-nginx-reverse-proxy "Goto 11. Nginx Reverse Proxy")
 
 ## Extras
 1. [Push Notifications](#1-Push-Notifications "Goto 1. Push Notifications")
 2. [Access your HC4 remotely](#2-Access-your-HC4-remotely "Goto 2. Access your HC4 remotely")
+   - [Nginx Reverse Proxy (Automated)](#11-nginx-reverse-proxy "Goto 11. Nginx Reverse Proxy")
 3. [PetitBoot Recovery](#3-PetitBoot-Recovery "Goto 3. PetitBoot Recovery")
 
 
@@ -495,85 +495,7 @@ Byparr is now configured to automatically bypass Cloudflare protection for index
 
 
 
-&nbsp;
-## 11. Nginx Reverse Proxy
 
-**Note:** This step is handled automatically by the setup script. See [scripts/README.md](scripts/README.md) for more details.
-
-Nginx is configured as a reverse proxy to provide path-based routing to all services. Instead of remembering different ports for each service, you can access everything via port 80 with different URL paths.
-
-### 11.1. Architecture
-
-- **Port 80 (Nginx):** Main entry point for all services
-  - `/omv` → OpenMediaVault (port 8080)
-  - `/jellyfin` → Jellyfin (port 8096)
-  - `/sonarr` → Sonarr (port 8989)
-  - `/radarr` → Radarr (port 7878)
-  - `/prowlarr` → Prowlarr (port 9696)
-  - `/transmission` → Transmission (port 9091)
-
-- **Port 8191:** FlareSolverr/Byparr (API-only, accessed directly by Prowlarr)
-
-### 11.2. Access Methods
-
-#### Via Meshnet (recommended for remote access):
-```
-http://<meshnet-hostname>/omv
-http://<meshnet-hostname>/jellyfin
-http://<meshnet-hostname>/sonarr
-http://<meshnet-hostname>/radarr
-http://<meshnet-hostname>/prowlarr
-http://<meshnet-hostname>/transmission
-```
-
-#### Via Local Network:
-```
-http://192.168.0.84/omv
-http://192.168.0.84/jellyfin
-http://192.168.0.84/sonarr
-http://192.168.0.84/radarr
-http://192.168.0.84/prowlarr
-http://192.168.0.84/transmission
-```
-
-#### Direct Port Access (still works):
-All services are still accessible directly on their original ports:
-```
-http://192.168.0.84:8080   - OpenMediaVault
-http://192.168.0.84:8096   - Jellyfin
-http://192.168.0.84:8989   - Sonarr
-http://192.168.0.84:7878   - Radarr
-http://192.168.0.84:9696   - Prowlarr
-http://192.168.0.84:9091   - Transmission
-http://192.168.0.84:8191   - FlareSolverr/Byparr
-```
-
-### 11.3. What Gets Configured
-
-The setup script automatically:
-
-1. **Reconfigures OpenMediaVault** to listen on port 8080 instead of 80
-2. **Installs Nginx** on the system
-3. **Creates reverse proxy rules** for all services with proper headers (X-Forwarded-For, X-Real-IP, etc.)
-4. **Enables WebSocket support** for real-time features in Jellyfin, Sonarr, Radarr, Prowlarr, and Transmission
-5. **Configures base URLs** in each service (Sonarr, Radarr, Prowlarr, Jellyfin, Transmission)
-6. **Sets up 100MB body size limit** for file uploads
-7. **Disables buffering** for Jellyfin media streaming
-
-### 11.4. Troubleshooting
-
-If services are not accessible via the proxy:
-
-1. **Check Nginx status:** `sudo systemctl status nginx`
-2. **Verify Nginx config:** `sudo nginx -t`
-3. **Check service ports:** `ss -tlnp | grep LISTEN`
-4. **View Nginx error log:** `sudo tail -f /var/log/nginx/error.log`
-5. **Restart Nginx:** `sudo systemctl restart nginx`
-
-If a specific service doesn't work via proxy but works on direct port:
-- Check that the service's base URL is configured correctly
-- Verify the service container is running: `docker ps`
-- Check service logs: `docker compose logs <service-name>`
 
 
 
@@ -622,6 +544,74 @@ To access your HC4, you can use NordVPN Meshnet which is a feature that allows t
 2. Enable Meshnet on the client device you want to access your HC4 from.
 3. Execute: `nordvpn meshnet peer list`, you should see the client device and the HC4 with its hostname.
 4. From your client device, use the HC4's hostname to access services running on it. Such as `hc4-hostname.nord:8096` for Jellyfin.
+
+### 2.1. Nginx Reverse Proxy
+
+**Note:** This step is handled automatically by the setup script. See [scripts/README.md](scripts/README.md) for more details.
+
+Nginx is configured as a reverse proxy to provide path-based routing to all services. Instead of remembering different ports for each service, you can access everything via port 80 with different URL paths.
+
+#### 2.1.1. Architecture
+
+- **Port 80 (Nginx):** Main entry point for all services
+   - `/omv` → OpenMediaVault (port 8080)
+   - `/jellyfin` → Jellyfin (port 8096)
+   - `/sonarr` → Sonarr (port 8989)
+   - `/radarr` → Radarr (port 7878)
+   - `/prowlarr` → Prowlarr (port 9696)
+   - `/transmission` → Transmission (port 9091)
+
+- **Port 8191:** FlareSolverr/Byparr (API-only, accessed directly by Prowlarr)
+
+#### 2.1.2. Access Methods
+
+| Service | Via Meshnet | Via Local Network | Direct Port |
+|---------|-------------|-------------------|-------------|
+| OpenMediaVault | `http://<meshnet-hostname>/omv` | `http://192.168.0.84/omv` | `http://192.168.0.84:8080` |
+| Jellyfin | `http://<meshnet-hostname>/jellyfin` | `http://192.168.0.84/jellyfin` | `http://192.168.0.84:8096` |
+| Sonarr | `http://<meshnet-hostname>/sonarr` | `http://192.168.0.84/sonarr` | `http://192.168.0.84:8989` |
+| Radarr | `http://<meshnet-hostname>/radarr` | `http://192.168.0.84/radarr` | `http://192.168.0.84:7878` |
+| Prowlarr | `http://<meshnet-hostname>/prowlarr` | `http://192.168.0.84/prowlarr` | `http://192.168.0.84:9696` |
+| Transmission | `http://<meshnet-hostname>/transmission` | `http://192.168.0.84/transmission` | `http://192.168.0.84:9091` |
+| FlareSolverr/Byparr | — | — | `http://192.168.0.84:8191` |
+
+**Note:** Meshnet access is recommended for remote access. All services are still accessible directly on their original ports.
+
+#### 2.1.3. What Gets Configured
+
+The setup script automatically:
+
+1. **Reconfigures OpenMediaVault** to listen on port 8080 instead of 80
+2. **Installs Nginx** on the system
+3. **Creates reverse proxy rules** for all services with proper headers (X-Forwarded-For, X-Real-IP, etc.)
+4. **Deploys a dynamic landing page** at the root path (`/`) that:
+    - Displays all available services with branded cards and icons
+    - Detects whether you're accessing via local network or NordVPN Meshnet
+    - Automatically generates correct URLs based on access method
+    - Provides a single entry point to all services
+5. **Enables WebSocket support** for real-time features in Jellyfin, Sonarr, Radarr, Prowlarr, and Transmission
+6. **Configures base URLs** in each service (Sonarr, Radarr, Prowlarr, Jellyfin, Transmission)
+7. **Sets up 100MB body size limit** for file uploads
+8. **Disables buffering** for Jellyfin media streaming
+
+#### 2.1.4. Landing Page
+
+The setup script automatically deploys a dynamic landing page at `http://<HC4-IP>/` (or `http://<meshnet-hostname>/` for Meshnet access).
+
+**Features:**
+- **Smart URL Detection:** Automatically detects if you're accessing via local network (192.168.0.84) or NordVPN Meshnet and generates the appropriate URLs
+- **Service Cards:** Clean interface with branded cards for each service (OpenMediaVault, Jellyfin, Sonarr, Radarr, Prowlarr, Transmission)
+- **Service Icons:** Each service displays its branded icon and description
+- **Mobile Responsive:** Works on desktop, tablet, and mobile devices
+- **Automatic Fallback:** If the main landing page file is missing, a simple fallback HTML page is created
+
+**Source files:**
+- Main landing page: `nginx-pages/index.html` (deployed to `/var/www/media-center/index.html`)
+- Service icons: `images/*.png` (deployed to `/var/www/media-center/images/`)
+
+**Accessing the landing page:**
+- Local Network: `http://192.168.0.84/`
+- Meshnet: `http://<meshnet-hostname>/` (e.g., `http://rx.sylvain-atlas.nord/`)`
 
 
 

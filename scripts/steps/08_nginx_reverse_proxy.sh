@@ -252,6 +252,48 @@ else
     
     log_step "Creating nginx configuration for media center proxy..."
     
+    # Create nginx pages directory and copy landing page
+    NGINX_PAGES_DIR="/var/www/media-center"
+    mkdir -p "$NGINX_PAGES_DIR"
+    
+    # Copy landing page HTML
+    if [[ -f "${SCRIPT_DIR}/../nginx-pages/index.html" ]]; then
+        cp "${SCRIPT_DIR}/../nginx-pages/index.html" "$NGINX_PAGES_DIR/index.html"
+        chmod 644 "$NGINX_PAGES_DIR/index.html"
+        log "Landing page HTML copied to ${NGINX_PAGES_DIR}"
+    else
+        log_warn "Landing page HTML not found at ${SCRIPT_DIR}/../nginx-pages/index.html"
+        log "Creating basic landing page..."
+        
+        # Fallback: create a minimal HTML landing page
+        cat > "$NGINX_PAGES_DIR/index.html" << 'HTML_FALLBACK'
+<!DOCTYPE html>
+<html>
+<head><title>Media Center</title><style>body{font-family:Arial,sans-serif;margin:50px;}</style></head>
+<body><h1>Media Center Proxy Active</h1><p>Available Services:</p><ul>
+<li><a href="/omv">OpenMediaVault</a></li>
+<li><a href="/jellyfin">Jellyfin Media Server</a></li>
+<li><a href="/sonarr">TV Shows Manager</a></li>
+<li><a href="/radarr">Movies Manager</a></li>
+<li><a href="/prowlarr">Indexer Manager</a></li>
+<li><a href="/transmission">Download Client</a></li>
+</ul></body></html>
+HTML_FALLBACK
+        chmod 644 "$NGINX_PAGES_DIR/index.html"
+        log "Basic fallback landing page created"
+    fi
+    
+    # Copy service icons
+    if [[ -d "${SCRIPT_DIR}/../images" ]]; then
+        mkdir -p "$NGINX_PAGES_DIR/images"
+        chmod 755 "$NGINX_PAGES_DIR/images"
+        cp "${SCRIPT_DIR}/../images"/*.png "$NGINX_PAGES_DIR/images/"
+        chmod 644 "$NGINX_PAGES_DIR/images"/*.png
+        log "Service icons copied to ${NGINX_PAGES_DIR}/images"
+    else
+        log_warn "Images directory not found at ${SCRIPT_DIR}/../images"
+    fi
+    
     # Create the nginx site configuration
     cat > "$NGINX_CONFIG" << 'NGINX_EOF'
 # Media Center Reverse Proxy Configuration
@@ -265,10 +307,12 @@ server {
     # Increase body size for large file uploads
     client_max_body_size 100M;
 
-    # Root - simple status page
+    # Root - serve landing page with dynamic URL detection
+    root /var/www/media-center;
+    
     location = / {
-        return 200 "Media Center Proxy Active\n\nAvailable Services:\n/omv - OpenMediaVault\n/jellyfin - Jellyfin Media Server\n/sonarr - TV Shows Manager\n/radarr - Movies Manager\n/prowlarr - Indexer Manager\n/transmission - Download Client\n";
-        add_header Content-Type text/plain;
+        try_files /index.html =404;
+        add_header Content-Type text/html;
     }
 
     # OpenMediaVault
@@ -307,9 +351,9 @@ server {
     # Sonarr - TV Shows
     location /sonarr {
         proxy_pass http://127.0.0.1:8989;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host localhost;
+        proxy_set_header X-Real-IP 127.0.0.1;
+        proxy_set_header X-Forwarded-For 127.0.0.1;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header X-Forwarded-Host $http_host;
         
@@ -322,9 +366,9 @@ server {
     # Radarr - Movies
     location /radarr {
         proxy_pass http://127.0.0.1:7878;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host localhost;
+        proxy_set_header X-Real-IP 127.0.0.1;
+        proxy_set_header X-Forwarded-For 127.0.0.1;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header X-Forwarded-Host $http_host;
         
@@ -337,9 +381,9 @@ server {
     # Prowlarr - Indexer Manager
     location /prowlarr {
         proxy_pass http://127.0.0.1:9696;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host localhost;
+        proxy_set_header X-Real-IP 127.0.0.1;
+        proxy_set_header X-Forwarded-For 127.0.0.1;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header X-Forwarded-Host $http_host;
         
